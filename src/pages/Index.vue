@@ -5,10 +5,7 @@
         <q-btn dense flat round icon="menu" @click="left = !left" />
 
         <q-toolbar-title>
-<!--          <q-avatar>-->
-<!--            <img src="../assets/shine-engine-logo-512x512.png">-->
-<!--          </q-avatar>-->
-          Shine packet sniffer
+          Shine Packet Sniffer
         </q-toolbar-title>
         <q-btn dense flat round icon="menu" @click="right = !right" />
       </q-toolbar>
@@ -16,6 +13,25 @@
 
     <q-drawer v-model="left"  show-if-above side="left" behavior="desktop" bordered>
       <!-- drawer content -->
+      <q-card>
+        <q-card-section>
+          <div class="text-bold text-h6">
+            Filters
+          </div>
+          <q-separator></q-separator>
+          <!--            <div v-for="(ofv, ofk) in opFilters" :key="ofk">-->
+          <q-list>
+            <q-item v-for="(ofv, ofk) in opFilters" :key="ofk">
+              <q-item-section avatar>
+                <q-checkbox v-model="appliedFilters" :val="ofv.opCode" color="teal" />
+              </q-item-section>
+              <q-item-section>
+                <q-item-label>{{ofv.friendlyName}}</q-item-label>
+              </q-item-section>
+            </q-item>
+          </q-list>
+        </q-card-section>
+      </q-card>
     </q-drawer>
 
     <q-drawer v-model="right" show-if-above side="right" behavior="desktop" bordered>
@@ -29,25 +45,26 @@
             Connected clients
             <span >
               <q-btn round color="red-4"  icon="stop"                v-if="listening" @click="stopListening"/>
-              <q-btn round color="light-green-14"  icon="play_arrow" v-else           @click="startListening"/>
+              <q-btn round color="light-green-14"  icon="play_arrow" v-else           @click="listenForPackets"/>
             </span>
           </div>
         </q-card-section>
         <q-tabs
           v-model="clientPanel"
           align="left"
+
           active-bg-color="blue-grey-5"
           indicator-color="white"
           active-color="white"
         >
-          <q-tab v-for="(cv, ck) in clients" :key="ck" :name="ck" :label="ck ">
-            <span :class="[cv.active ? 'text-light-green-14' : 'text-red-4', 'text-bold']">{{(cv.active ? '[ ACTIVE ]' : '[ INACTIVE ]')}}</span>
+          <q-tab v-show="clients" v-for="(cv, ck) in clients" :key="ck" :name="ck" :label="ck ">
+<!--            <span :class="[cv.active ? 'text-light-green-14' : 'text-red-4', 'text-bold']">{{(cv.active ? '[ ACTIVE ]' : '[ INACTIVE ]')}}</span>-->
           </q-tab>
         </q-tabs>
         <br>
         <q-separator />
 
-        <q-tab-panels v-model="clientPanel" animated  class="body--dark">
+        <q-tab-panels v-model="clientPanel" class="body--dark">
           <q-tab-panel v-for="(cv, ck) in clients" :key="ck" :name="ck" >
               <q-card flat>
                 <q-card-section>
@@ -61,19 +78,34 @@
                   indicator-color="white"
                   active-color="gray"
                 >
-                  <q-tab v-for="(fv, fk) in cv.flows" :key="fk" :name="fk" :label="fv.flowName">
+                  <q-tab v-for="(fv, fk) in clientFlows(ck)" :key="fk" :name="fk" :label="fv.flowName">
                     <span :class="[fv.active ? 'text-light-green-14' : 'text-red-4', 'text-bold']">{{(fv.active ? '[ FLOWING ]' : '[ TERMINATED ]')}}</span>
                   </q-tab>
                 </q-tabs>
-                <q-tab-panels v-model="clientFlowsPanel" animated  class="body--dark">
-                  <q-tab-panel v-for="(fv, fk) in cv.flows" :key="fk" :name="fk" class="body--dark">
+                <q-tab-panels v-model="clientFlowsPanel" class="body--dark">
+                  <q-tab-panel v-for="(fv, fk) in clientFlows(ck)" :key="fk" :name="fk" class="body--dark">
                     <q-separator />
                     <br>
-                    <q-list dark bordered separator>
-                      <q-item v-for="(pv, pk) in fv.packets" :key="pk"  clickable v-ripple>
-                        <q-item-section>{{pv}}</q-item-section>
-                      </q-item>
-                    </q-list>
+                    <div class="q-ma-md">
+                      <q-scroll-area
+                        dark
+                        class="bg-dark text-white rounded-borders"
+                        style="height: 1080px;"
+                      >
+                        <q-list dark bordered separator>
+                          <q-item v-for="(pv, pk) in clientFlowPackets(fk)" :key="pk"  clickable>
+                            <!--                        <q-item-section>{{pv}}</q-item-section>-->
+                            <!--                        {{pv}}-->
+                            <q-btn stretch  color="indigo-3" text-color="black"  size="sm" :label="pv.packetID">
+                            </q-btn>
+                            <q-btn  stretch color="brown-3" text-color="black"  size="sm" :label="pv.timeStamp">
+                            </q-btn>
+                            <q-btn  stretch color="indigo-5" text-color="gray-5" class="full-width" size="sm" :label="pv.data.friendlyName">
+                            </q-btn>
+                          </q-item>
+                        </q-list>
+                      </q-scroll-area>
+                    </div>
                   </q-tab-panel>
                 </q-tab-panels>
               </q-card>
@@ -86,6 +118,7 @@
 
 <script>
   import { mapGetters, mapActions } from 'vuex'
+  import {clientFlowPackets} from "../store/packets/getters";
 
   export default {
     data () {
@@ -94,21 +127,38 @@
         clientFlowsPanel: "clientFlowsPanel",
         clientFlowPacketsPanel: "clientFlowPacketsPanel",
         left: false,
-        right: false
+        right: false,
+        // appliedFilters: []
       }
     },
 
     methods: {
+      packetFilter(fk) {
+        return clientFlowPackets(fk)
+        // return obj
+      },
       ...mapActions({
-        startListening: 'startListening', // map `this.add()` to `this.$store.dispatch('increment')`
+        listenForPackets: 'listenForPackets', // map `this.add()` to `this.$store.dispatch('increment')`
         stopListening: 'stopListening' // map `this.add()` to `this.$store.dispatch('increment')`
-      })
+      }),
     },
     computed: {
       ...mapGetters([
         'clients',
+        'clientFlows',
+        'clientFlowPackets',
         'listening',
-      ])
+        'opFilters'
+      ]),
+      appliedFilters: {
+        get(){
+          return this.$store.state.packets.appliedFilters;
+        },
+        set(filter){
+          console.log(filter);
+          this.$store.commit('applyFilter', filter);
+        },
+      }
     }
   }
 </script>
