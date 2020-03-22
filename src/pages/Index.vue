@@ -22,7 +22,7 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="left"  show-if-above side="left" behavior="desktop" >
+    <q-drawer v-model="left"  show-if-above side="left" behavior="desktop">
       <q-card>
         <q-card-section>
           <div class="text-bold text-h6">
@@ -51,7 +51,7 @@
           <q-separator />
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.length)">
             </q-btn>
             <span class="text-right">
               length ->    {{packet.data.length}} bytes
@@ -59,7 +59,7 @@
           </div>
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.department)">
             </q-btn>
             <span >
               department ->    {{packet.data.department}}
@@ -67,7 +67,7 @@
           </div>
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.command)">
             </q-btn>
             <span >
               command ->    {{packet.data.command}}
@@ -75,10 +75,18 @@
           </div>
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.opCode)">
             </q-btn>
             <span >
               operation code ->    {{packet.data.opCode}}
+            </span>
+          </div>
+          <br>
+          <div class="text-bold" >
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.friendlyName)">
+            </q-btn>
+            <span >
+              command name ->    {{packet.data.friendlyName}}
             </span>
           </div>
         </q-card-section>
@@ -95,7 +103,7 @@
         </q-card-section>
         <q-separator />
         <q-card-actions align="right">
-          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"> </q-btn>
+          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md" @click="copyText(packet.data.rawData)"> </q-btn>
           <!--          <q-btn flat>Action 2</q-btn>-->
         </q-card-actions>
       </q-card>
