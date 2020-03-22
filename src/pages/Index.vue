@@ -1,5 +1,16 @@
 <template>
   <q-layout view="hHh LpR fFf">
+
+    <q-dialog v-model="textCopied" position="top">
+      <q-card>
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">Copied to clipboard</div>
+          <q-btn icon="close" flat round dense v-close-popup />
+        </q-card-section>
+        <br>
+      </q-card>
+    </q-dialog>
+
     <q-header reveal elevated class="bg-primary text-white" height-hint="98">
       <q-toolbar>
         <q-btn dense flat round icon="menu" @click="left = !left" />
@@ -11,15 +22,13 @@
       </q-toolbar>
     </q-header>
 
-    <q-drawer v-model="left"  show-if-above side="left" behavior="desktop" bordered>
-      <!-- drawer content -->
+    <q-drawer v-model="left"  show-if-above side="left" behavior="desktop" >
       <q-card>
         <q-card-section>
           <div class="text-bold text-h6">
             Filters
           </div>
           <q-separator></q-separator>
-          <!--            <div v-for="(ofv, ofk) in opFilters" :key="ofk">-->
           <q-list>
             <q-item v-for="(ofv, ofk) in opFilters" :key="ofk">
               <q-item-section avatar>
@@ -36,23 +45,77 @@
 
     <q-drawer v-model="right" show-if-above side="right" behavior="desktop" bordered>
       <!-- drawer content -->
+      <q-card class="my-card" v-if="packet.data">
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6">Packet Headers</div>
+          <q-separator />
+          <br>
+          <div class="text-bold" >
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            </q-btn>
+            <span class="text-right">
+              length ->    {{packet.data.length}} bytes
+            </span>
+          </div>
+          <br>
+          <div class="text-bold" >
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            </q-btn>
+            <span >
+              department ->    {{packet.data.department}}
+            </span>
+          </div>
+          <br>
+          <div class="text-bold" >
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            </q-btn>
+            <span >
+              command ->    {{packet.data.command}}
+            </span>
+          </div>
+          <br>
+          <div class="text-bold" >
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md">
+            </q-btn>
+            <span >
+              operation code ->    {{packet.data.opCode}}
+            </span>
+          </div>
+        </q-card-section>
+
+        <q-separator />
+
+      </q-card>
+      <q-card class="my-card" v-if="packet.data">
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6">Raw Data</div>
+        </q-card-section>
+        <q-card-section>
+            {{packet.data.rawData}}
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"> </q-btn>
+          <!--          <q-btn flat>Action 2</q-btn>-->
+        </q-card-actions>
+      </q-card>
     </q-drawer>
 
     <q-page-container class="q-ma-md">
       <q-card>
         <q-card-section>
           <div class="text-h5">
-            Connected clients
-            <span >
-              <q-btn round color="red-4"  icon="stop"                v-if="listening" @click="stopListening"/>
+           Active Clients
+            <span>
+              <q-btn  round color="red-4"  icon="stop"                v-if="listening" @click="stopListening"/>
               <q-btn round color="light-green-14"  icon="play_arrow" v-else           @click="listenForPackets"/>
             </span>
           </div>
         </q-card-section>
         <q-tabs
+          class="q-ma-md"
           v-model="clientPanel"
           align="left"
-
           active-bg-color="blue-grey-5"
           indicator-color="white"
           active-color="white"
@@ -92,17 +155,27 @@
                         class="bg-dark text-white rounded-borders"
                         style="height: 1080px;"
                       >
-                        <q-list dark bordered separator>
-                          <q-item v-for="(pv, pk) in clientFlowPackets(fk)" :key="pk"  clickable>
-                            <!--                        <q-item-section>{{pv}}</q-item-section>-->
-                            <!--                        {{pv}}-->
-                            <q-btn stretch  color="indigo-3" text-color="black"  size="sm" :label="pv.packetID">
-                            </q-btn>
-                            <q-btn  stretch color="brown-3" text-color="black"  size="sm" :label="pv.timeStamp">
-                            </q-btn>
-                            <q-btn  stretch color="indigo-5" text-color="gray-5" class="full-width" size="sm" :label="pv.data.friendlyName">
-                            </q-btn>
-                          </q-item>
+                        <q-list dark bordered separator dense>
+                            <q-item
+                              dark
+                              v-for="(pv, pk) in clientFlowPackets(fk)"
+                              :key="pk"
+                              clickable
+                              v-ripple
+                              :active="selectedPacket === pv.packetID"
+                              @click="packetClick(pv)"
+                              active-class="text-orange-10 mnu_active"
+                            >
+                              <q-item-section align="left">
+                                {{pv.packetID}}
+                              </q-item-section>
+                              <q-item-section align="left">
+                                {{pv.timeStamp}}
+                              </q-item-section>
+                              <q-item-section>
+                                {{pv.data.friendlyName}}
+                              </q-item-section>
+                            </q-item>
                         </q-list>
                       </q-scroll-area>
                     </div>
@@ -119,6 +192,7 @@
 <script>
   import { mapGetters, mapActions } from 'vuex'
   import {clientFlowPackets} from "../store/packets/getters";
+  import { copyToClipboard } from 'quasar'
 
   export default {
     data () {
@@ -128,11 +202,33 @@
         clientFlowPacketsPanel: "clientFlowPacketsPanel",
         left: false,
         right: false,
+        textCopied: false,
+        selectedPacket : '',
+        packet : {}
         // appliedFilters: []
       }
     },
 
     methods: {
+      packetClick(pv) {
+        this.selectedPacket = pv.packetID;
+        this.packet = pv;
+      },
+      copyText(text) {
+        let vue = this;
+
+        copyToClipboard(text)
+          .then(function (){
+            // success!
+            vue.textCopied = true;
+            setTimeout(function () {
+              vue.textCopied = false
+            }, 1000)
+          })
+          .catch(() => {
+            // fail
+          })
+      },
       packetFilter(fk) {
         return clientFlowPackets(fk)
         // return obj
