@@ -45,48 +45,48 @@
 
     <q-drawer v-model="right" show-if-above side="right" behavior="desktop" bordered>
       <!-- drawer content -->
-      <q-card class="my-card" v-if="packet.data">
+      <q-card class="my-card" v-if="packet.packetData">
         <q-card-section class="bg-primary text-white">
           <div class="text-h6">Packet Headers</div>
           <q-separator />
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.length)">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.packetData.length)">
             </q-btn>
             <span class="text-right">
-              length ->    {{packet.data.length}} bytes
+              length ->    {{packet.packetData.length}} bytes
             </span>
           </div>
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.department)">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.packetData.department)">
             </q-btn>
             <span >
-              department ->    {{packet.data.department}}
+              department ->    {{packet.packetData.department}}
             </span>
           </div>
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.command)">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.packetData.command)">
             </q-btn>
             <span >
-              command ->    {{packet.data.command}}
+              command ->    {{packet.packetData.command}}
             </span>
           </div>
           <br>
           <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.opCode)">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.packetData.opCode)">
             </q-btn>
             <span >
-              operation code ->    {{packet.data.opCode}}
+              operation code ->    {{packet.packetData.opCode}}
             </span>
           </div>
           <br>
-          <div class="text-bold" >
-            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.data.friendlyName)">
+          <div class="text-bold">
+            <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md"  @click="copyText(packet.packetData.friendlyName)">
             </q-btn>
             <span >
-              command name ->    {{packet.data.friendlyName}}
+              command name ->    {{packet.packetData.friendlyName}}
             </span>
           </div>
         </q-card-section>
@@ -94,16 +94,29 @@
         <q-separator />
 
       </q-card>
-      <q-card class="my-card" v-if="packet.data">
+      <q-card class="my-card" v-if="packet.packetData">
         <q-card-section class="bg-primary text-white">
           <div class="text-h6">Raw Data</div>
         </q-card-section>
         <q-card-section>
-            {{packet.data.rawData}}
+            {{packet.packetData.rawData}}
         </q-card-section>
         <q-separator />
         <q-card-actions align="right">
-          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md" @click="copyText(packet.data.rawData)"> </q-btn>
+          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md" @click="copyText(packet.packetData.rawData)"> </q-btn>
+          <!--          <q-btn flat>Action 2</q-btn>-->
+        </q-card-actions>
+      </q-card>
+      <q-card class="my-card" v-if="packet.packetData">
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6">Unpacked data</div>
+        </q-card-section>
+        <q-card-section v-if="!isEmpty(packet.ncRepresentation.unpacked_data)">
+          <json-viewer :value="JSON.parse(packet.ncRepresentation.unpacked_data)"></json-viewer>
+        </q-card-section>
+        <q-separator />
+        <q-card-actions align="right">
+          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md" @click="copyText(packet.packetData.rawData)"> </q-btn>
           <!--          <q-btn flat>Action 2</q-btn>-->
         </q-card-actions>
       </q-card>
@@ -122,73 +135,53 @@
         </q-card-section>
         <q-tabs
           class="q-ma-md"
-          v-model="clientPanel"
+          v-model="connectionPanel"
           align="left"
           active-bg-color="blue-grey-5"
           indicator-color="white"
           active-color="white"
         >
-          <q-tab v-show="clients" v-for="(cv, ck) in clients" :key="ck" :name="ck" :label="ck ">
-<!--            <span :class="[cv.active ? 'text-light-green-14' : 'text-red-4', 'text-bold']">{{(cv.active ? '[ ACTIVE ]' : '[ INACTIVE ]')}}</span>-->
+          <q-tab v-show="connections" v-for="(cv, ck) in connections" :key="ck" :name="ck" :label="ck ">
           </q-tab>
         </q-tabs>
         <br>
         <q-separator />
 
-        <q-tab-panels v-model="clientPanel" class="body--dark">
-          <q-tab-panel v-for="(cv, ck) in clients" :key="ck" :name="ck" >
+        <q-tab-panels v-model="connectionPanel" class="body--dark">
+          <q-tab-panel v-for="(cv, ck) in connections" :key="ck" :name="ck" >
               <q-card flat>
                 <q-card-section>
-                  <div class="text-h6">TCP Flows</div>
                 </q-card-section>
-
-                <q-tabs
-                  v-model="clientFlowsPanel"
-                  align="left"
-                  active-bg-color="blue-grey-5"
-                  indicator-color="white"
-                  active-color="gray"
-                >
-                  <q-tab v-for="(fv, fk) in clientFlows(ck)" :key="fk" :name="fk" :label="fv.flowName">
-                    <span :class="[fv.active ? 'text-light-green-14' : 'text-red-4', 'text-bold']">{{(fv.active ? '[ FLOWING ]' : '[ TERMINATED ]')}}</span>
-                  </q-tab>
-                </q-tabs>
-                <q-tab-panels v-model="clientFlowsPanel" class="body--dark">
-                  <q-tab-panel v-for="(fv, fk) in clientFlows(ck)" :key="fk" :name="fk" class="body--dark">
-                    <q-separator />
-                    <br>
-                    <div class="q-ma-md">
-                      <q-scroll-area
+                <div class="q-ma-md">
+                  <q-scroll-area
+                    dark
+                    class="bg-dark text-white rounded-borders"
+                    style="height: 1080px;"
+                  >
+                    <q-list dark bordered separator dense>
+                      <q-item
                         dark
-                        class="bg-dark text-white rounded-borders"
-                        style="height: 1080px;"
+                        v-for="(pv, pk) in connectionPackets(ck)"
+                        :key="pk"
+                        clickable
+                        v-ripple
+                        :active="selectedPacket === pv.packetID"
+                        @click="packetClick(pv)"
+                        active-class="text-orange-10 mnu_active"
                       >
-                        <q-list dark bordered separator dense>
-                            <q-item
-                              dark
-                              v-for="(pv, pk) in clientFlowPackets(fk)"
-                              :key="pk"
-                              clickable
-                              v-ripple
-                              :active="selectedPacket === pv.packetID"
-                              @click="packetClick(pv)"
-                              active-class="text-orange-10 mnu_active"
-                            >
-                              <q-item-section align="left">
-                                {{pv.packetID}}
-                              </q-item-section>
-                              <q-item-section align="left">
-                                {{pv.timeStamp}}
-                              </q-item-section>
-                              <q-item-section>
-                                {{pv.data.friendlyName}}
-                              </q-item-section>
-                            </q-item>
-                        </q-list>
-                      </q-scroll-area>
-                    </div>
-                  </q-tab-panel>
-                </q-tab-panels>
+                        <q-item-section align="left">
+                          {{pv.timestamp}}
+                        </q-item-section>
+                        <q-item-section align="left">
+                          {{pv.direction}}
+                        </q-item-section>
+                        <q-item-section>
+                          {{pv.packetData.friendlyName}}
+                        </q-item-section>
+                      </q-item>
+                    </q-list>
+                  </q-scroll-area>
+                </div>
               </q-card>
           </q-tab-panel>
         </q-tab-panels>
@@ -205,9 +198,8 @@
   export default {
     data () {
       return {
-        clientPanel: "clientPanel",
-        clientFlowsPanel: "clientFlowsPanel",
-        clientFlowPacketsPanel: "clientFlowPacketsPanel",
+        connectionPanel: "connectionPanel",
+        connectionPacketsPanel: "connectionPacketsPanel",
         left: false,
         right: false,
         textCopied: false,
@@ -218,6 +210,13 @@
     },
 
     methods: {
+      isEmpty (input) {
+        if (typeof input === 'array') {
+          return input.length === 0;
+        }
+
+        return !input || Object.keys(input).length === 0;
+      },
       packetClick(pv) {
         this.selectedPacket = pv.packetID;
         this.packet = pv;
@@ -248,9 +247,8 @@
     },
     computed: {
       ...mapGetters([
-        'clients',
-        'clientFlows',
-        'clientFlowPackets',
+        'connections',
+        'connectionPackets',
         'listening',
         'opFilters'
       ]),

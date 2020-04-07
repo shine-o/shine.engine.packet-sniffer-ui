@@ -1,8 +1,13 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import JsonViewer from 'vue-json-viewer'
 
+// Import JsonViewer as a Vue.js plugin
+Vue.use(JsonViewer)
 // import example from './module-example'
 import packets from './packets'
+import 'vue-json-viewer/style.css'
+import createPersistedState from "vuex-persistedstate";
 
 Vue.use(Vuex)
 
@@ -21,7 +26,7 @@ export default function (/* { ssrContext } */) {
       // example
       packets
     },
-
+    // plugins: [createPersistedState()],
     // enable strict mode (adds overhead!)
     // for dev mode only
     strict: process.env.DEV

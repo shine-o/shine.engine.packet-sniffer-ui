@@ -18,6 +18,7 @@ export function listenForPackets({state, commit, dispatch}) {
     };
 
     ws.onmessage = function(evt) {
+      // console.log(evt.data)
       dispatch('handlePacket', JSON.parse(evt.data))
     };
 
@@ -56,76 +57,45 @@ export function flow({state, commit, dispatch}, flowInfo) {
   commit('newFlow', flowInfo)
 }
 
-export function packet({state, commit, dispatch}, packetInfo) {
-  if (state.packets.hasOwnProperty(packetInfo.clientFlowID)) {
+export function packet({state, commit, dispatch}, packet) {
+  if (state.connections.hasOwnProperty(packet.connectionKey)) {
     // this flow has packet key, append packets
-    commit('appendPacketToFlow', packetInfo)
-
+    commit('newConnectionPacket', packet)
   } else {
     // this flow has no packet key, add it
-    commit('newFlowPackets', packetInfo)
+    commit('newConnection', packet.connectionKey)
+    commit('newConnectionPacket', packet)
+
   }
 }
 
-export function closeFlow({state, commit, dispatch}, flowInfo) {
-  let clientFlowID = flowInfo.client_ip + '.' + flowInfo.flow_id;
-  if (state.flows.hasOwnProperty(clientFlowID)) {
-    commit('closeFlow', clientFlowID)
+export function closeConnection({state, commit, dispatch}, connectionKey) {
+  if (state.connections.hasOwnProperty(connectionKey)) {
+    commit('closeFlow',  connectionKey)
   }
 }
 
 export function handlePacket({state, commit, dispatch}, pJson) {
 
-  if (pJson.hasOwnProperty("flow_completed")) {
-    dispatch('closeFlow', pJson);
+  if (pJson.hasOwnProperty("connectionClosed")) {
+    dispatch('closeConnection', pJson.connectionKey);
     return
   }
 
-  dispatch('client', {
-    clientIP: pJson.client_ip
-  });
-
-  let clientFlowID = pJson.client_ip + '.' + pJson.flow_id;
-  // commit flow
-  dispatch('flow', {
-    clientFlowID: clientFlowID,
-    clientIP: pJson.client_ip,
-    flowID: pJson.flow_id,
-    flowName: pJson.flow_name
-  });
+  console.log(pJson);
 
   // commit packet
-  let pData = JSON.parse(pJson.packet_data);
-  dispatch('packet', {
-    clientFlowID: clientFlowID,
-    packetID: pJson.packet_id,
-    timeStamp: pJson.timestamp,
-    data: pData
-  });
-
-  dispatch('filters', pData)
-  // update client
-  // fetch clients from state.
-
-  // if client does not exist
-  //    insert client data, flow data
-
-  // else update flows
-  //    if flow does not exist
-  //       insert flow data
-  //    else update flow data [ insert packets ]
+  dispatch('packet', pJson);
+  dispatch('filters', pJson.packetData)
 }
 
-export function filters({state, commit, dispatch}, pData) {
-  // for each packet, push it to the filters object like this:
-  // opcode: "friendlyName"
-  // console.log(pData)
-  if (state.opFilters.hasOwnProperty(pData.opCode)) {
+export function filters({state, commit, dispatch}, packet) {
+  if (state.opFilters.hasOwnProperty(packet.opCode)) {
     return
   }
   commit('newFilter', {
-    opCode: pData.opCode,
-    friendlyName: pData.friendlyName,
+    opCode: packet.opCode,
+    friendlyName: packet.friendlyName,
     activated: false
   })
 }

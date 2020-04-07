@@ -2,27 +2,16 @@ export function listening (state) {
   return state.listening
 }
 
-export function clients (state) {
-  return state.clients
+export function connections (state) {
+  return state.connections
 }
 
-// export function clientFlows(state, clientIP) {
-export const clientFlows = state => clientIP => {
-  let flows = {};
-  for (let flow in state.flows) {
-    if (state.flows.hasOwnProperty(flow) && state.flows.hasOwnProperty(clientIP + '.' + state.flows[flow].flowID)) {
-      flows[clientIP + '.' + state.flows[flow].flowID] = state.flows[clientIP + '.' + state.flows[flow].flowID];
-    }
-  }
-  return flows
-};
-
-export const clientFlowPackets = (state, getters) => clientFlowID => {
+export const connectionPackets = (state, getters) => connectionKey => {
 // export function clientFlowPackets(state, getters, clientFlowID ) {
-   if (state.packets.hasOwnProperty(clientFlowID)) {
-      return state.packets[clientFlowID].list.filter(function(p) {
-        return !getters.appliedFilters.includes(p.data.opCode)
-      })
+   if (state.connections.hasOwnProperty(connectionKey)) {
+      return state.connections[connectionKey].packets.filter(function(p) {
+        return !getters.appliedFilters.includes(p.packetData.opCode)
+      }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
   }
 };
 
