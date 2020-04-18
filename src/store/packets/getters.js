@@ -11,7 +11,7 @@ export const connectionPackets = (state, getters) => connectionKey => {
    if (state.connections.hasOwnProperty(connectionKey)) {
       return state.connections[connectionKey].packets.filter(function(p) {
         return !getters.appliedFilters.includes(p.packetData.opCode)
-      }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+      }).sort((a, b) => new Date(b.timestamp).getUTCMilliseconds() - new Date(a.timestamp).getUTCMilliseconds())
   }
 };
 

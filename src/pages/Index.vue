@@ -43,7 +43,7 @@
       </q-card>
     </q-drawer>
 
-    <q-drawer v-model="right" show-if-above side="right" behavior="desktop" bordered>
+    <q-drawer :width="350" v-model="right" show-if-above side="right" behavior="desktop" bordered>
       <!-- drawer content -->
       <q-card class="my-card" v-if="packet.packetData">
         <q-card-section class="bg-primary text-white">
@@ -101,9 +101,15 @@
         <q-card-section>
             {{packet.packetData.rawData}}
         </q-card-section>
+        <q-card-section class="bg-primary text-white">
+          <div class="text-h6">Packet Data</div>
+        </q-card-section>
+        <q-card-section>
+          {{packet.packetData.data}}
+        </q-card-section>
         <q-separator />
         <q-card-actions align="right">
-          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md" @click="copyText(packet.packetData.rawData)"> </q-btn>
+          <q-btn size="small" round color="teal" icon="file_copy" class="q-ml-lg-md" @click="copyText(packet.packetData.data)"> </q-btn>
           <!--          <q-btn flat>Action 2</q-btn>-->
         </q-card-actions>
       </q-card>
@@ -174,6 +180,15 @@
                         </q-item-section>
                         <q-item-section align="left">
                           {{pv.direction}}
+                        </q-item-section>
+                        <q-item-section align="left">
+                          {{pv.packetData.department}}
+                        </q-item-section>
+                        <q-item-section align="left">
+                          {{pv.packetData.command}}
+                        </q-item-section>
+                        <q-item-section align="left">
+                          {{pv.packetData.opCode}}
                         </q-item-section>
                         <q-item-section>
                           {{pv.packetData.friendlyName}}
